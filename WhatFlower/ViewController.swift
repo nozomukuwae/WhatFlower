@@ -16,6 +16,7 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
 
     @IBOutlet weak var cameraButton: UIBarButtonItem!
     @IBOutlet weak var imageView: UIImageView!
+    @IBOutlet weak var label: UILabel!
     
     var imagePicker = UIImagePickerController()
     
@@ -86,13 +87,17 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         ]
         
         let url = "https://en.wikipedia.org/w/api.php"
-        
         Alamofire.request(url, method: .get, parameters: params).responseJSON { (response) in
             if response.result.isSuccess {
                 
                 let infoJSON : JSON = JSON(response.result.value!)
                 if let pageid : String = infoJSON["query"]["pageids"][0].string {
                     print(infoJSON["query"]["pages"][pageid]["extract"])
+                    let info = infoJSON["query"]["pages"][pageid]["extract"].string
+                    
+                    DispatchQueue.main.async {
+                        self.label.text = info
+                    }
                 }
             } else {
                 print("Error getting flower info")
