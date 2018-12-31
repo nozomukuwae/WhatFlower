@@ -11,6 +11,7 @@ import CoreML
 import Vision
 import Alamofire
 import SwiftyJSON
+import SDWebImage
 
 class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
@@ -36,7 +37,6 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         
         guard let image = info[UIImagePickerController.InfoKey.editedImage] as? UIImage else { fatalError("Error getting image from image picker") }
-        imageView.image = image
         imagePicker.dismiss(animated: true, completion: nil)
         
         guard let ciimage = CIImage(image: image) else {
@@ -78,12 +78,13 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
         let params: [String:String] = [
             "format":"json",
             "action":"query",
-            "prop":"extracts",
+            "prop":"extracts|pageimages",
             "exintro":"",
             "explaintext":"",
             "titles":name,
             "indexpageids":"",
-            "redirects":"1"
+            "redirects":"1",
+            "pithumbsize":"500"
         ]
         
         let url = "https://en.wikipedia.org/w/api.php"
@@ -91,12 +92,16 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             if response.result.isSuccess {
                 
                 let infoJSON : JSON = JSON(response.result.value!)
+                print(infoJSON)
                 if let pageid : String = infoJSON["query"]["pageids"][0].string {
-                    print(infoJSON["query"]["pages"][pageid]["extract"])
-                    let info = infoJSON["query"]["pages"][pageid]["extract"].string
+                    let info = infoJSON["query"]["pages"][pageid]["extract"].stringValue
+                    let imageURL = infoJSON["query"]["pages"][pageid]["thumbnail"]["source"].stringValue
                     
                     DispatchQueue.main.async {
                         self.label.text = info
+                        if let url = URL(string: imageURL) {
+                            self.imageView.sd_setAnimationImages(with: [url])
+                        }
                     }
                 }
             } else {
