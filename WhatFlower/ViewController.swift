@@ -9,6 +9,8 @@
 import UIKit
 import CoreML
 import Vision
+import Alamofire
+import SwiftyJSON
 
 class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
@@ -53,12 +55,12 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
                 fatalError("Error getting result")
             }
             
-            print(results)
-            
             if let firstResult = results.first {
                 DispatchQueue.main.async {
                     self.navigationItem.title = firstResult.identifier.capitalized
                 }
+                
+                self.getFlowerInfo(name: firstResult.identifier)
             }
         }
         
@@ -69,5 +71,32 @@ class ViewController: UIViewController, UIImagePickerControllerDelegate, UINavig
             print(error)
         }
     }
+    
+    private func getFlowerInfo(name: String) {
+        
+        let params: [String:String] = [
+            "format":"json",
+            "action":"query",
+            "prop":"extracts",
+            "exintro":"",
+            "explaintext":"",
+            "titles":name,
+            "indexpageids":"",
+            "redirects":"1"
+        ]
+        
+        let url = "https://en.wikipedia.org/w/api.php"
+        
+        Alamofire.request(url, method: .get, parameters: params).responseJSON { (response) in
+            if response.result.isSuccess {
+                
+                let infoJSON : JSON = JSON(response.result.value!)
+                if let pageid : String = infoJSON["query"]["pageids"][0].string {
+                    print(infoJSON["query"]["pages"][pageid]["extract"])
+                }
+            } else {
+                print("Error getting flower info")
+            }
+        }
+    }
 }
-
